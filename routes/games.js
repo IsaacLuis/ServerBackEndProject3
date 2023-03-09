@@ -2,7 +2,8 @@ var express = require("express");
 var router = express.Router();
 
 const User = require('../models/User.model')
-
+const Review = require('../models/Review.model')
+const isAuthenticated = require('../middleware/isAuthenticated')
 // games_pick
 
 router.post('/add-wish/:userId', (req, res, next) => {
@@ -52,7 +53,7 @@ router.post("/delete/add-wish/:userId", (req, res, next) => {
           })
           .catch((err) => {
             console.log(err);
-            res.status(500).json({ message: "Internal server error" });
+            res.status(500).json({ message: "server" });
           })
       } else {
         res.json({ message: "Game not found in wishlist" });
@@ -60,7 +61,25 @@ router.post("/delete/add-wish/:userId", (req, res, next) => {
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "server error" });
+    });
+});
+
+router.post('/reviews', isAuthenticated, (req, res) => {
+  const { user, comment, rate } = req.body;
+
+  // Create a new review instance using the Review model
+  const newReview = new Review({
+    user: req.user._id, 
+    comment: req.body.comment,
+    rate: req.body.rate
+  });
+  
+  newReview.save()
+    .then(() => res.status(201).send('Review created successfully'))
+    .catch(error => {
+      console.error('Error creating review:', error);
+      res.status(500).send('Internal server error');
     });
 });
 

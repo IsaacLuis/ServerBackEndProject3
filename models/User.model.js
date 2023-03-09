@@ -14,8 +14,9 @@ const userSchema = new Schema(
     name: String,
     profile_image: String,
     age: Number,
-    games_pick: [],
-    posts: [{type: Schema.Types.ObjectId, ref: "Review"}]
+    games_pick: [Object],
+    review: [{type: Schema.Types.ObjectId, ref: "Review"}],
+    profile: [{type: Schema.Types.ObjectId, ref: "Profile"}]
   },
   {
     timeseries: true,
