@@ -1,6 +1,6 @@
-# fly.toml file generated for server-project-3 on 2023-03-08T16:31:46-05:00
+# fly.toml file generated for serverfinalproject3 on 2023-03-10T02:16:33-05:00
 
-app = "server-project-3"
+app = "serverfinalproject3"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
