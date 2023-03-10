@@ -9,6 +9,7 @@ const gamesSchema = new Schema(
     // genres: Array,
     // platforms: [Object],
     // languages: [String],
+    isCommented: { type: Boolean, default: false },
     metacritic: Number,
     review: { type: Schema.Types.ObjectId, ref: "Review" },
   },
@@ -20,4 +21,5 @@ const gamesSchema = new Schema(
 
 const Games = model("Games", gamesSchema);
 
-module.exports = Games; 
+module.exports = Games;
+

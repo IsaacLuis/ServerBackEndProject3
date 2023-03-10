@@ -143,7 +143,7 @@ router.post("/reviews/:id/:userId", isAuthenticated, (req, res) => {
       Games.findByIdAndUpdate(
         req.params.id,
 
-        { review: createdReview._id },
+        { review: createdReview._id, isCommented: true },
 
         { new: true }
       ).then((updatedGame) => {
@@ -160,6 +160,37 @@ router.post("/reviews/:id/:userId", isAuthenticated, (req, res) => {
     });
   });
 });
+
+
+
+router.get("/reviews/:gameId/:userId", isAuthenticated, (req, res) => {
+  console.log(req.params.gameId);
+  console.log(req.body);
+
+  Games.findOne({ id: req.params.gameId }).then((foundGame) => {
+    // if (!foundGame.reviews.length)
+    console.log(foundGame);
+    Review.findByIdAndDelete(foundGame.review).then((deletedUser) => {
+      console.log(deletedUser);
+      Games.findOneAndUpdate(
+        { id: req.params.gameId },
+        { isCommented: false },
+        { new: true }
+      ).then((updatedGame) => {
+        console.log(updatedGame);
+        User.findById(req.params.userId)
+          .populate({ path: "games_pick", populate: { path: "review" } })
+          .then((foundUser) => {
+            res.json(foundUser);
+          });
+      });
+    });
+  }) 
+}) 
+
+
+
+
 
 // Create a new review instance using the Review model
 
