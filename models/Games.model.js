@@ -3,14 +3,14 @@ const { Schema, model } = require("mongoose");
 const gamesSchema = new Schema(
   {
     name: String,
-    id: String,
+    id: Number,
     background_image: String,
-    released: Date,
-    genres: Array,
-    platforms: [Object],
-    languages: [String],
+    released: String,
+    // genres: Array,
+    // platforms: [Object],
+    // languages: [String],
     metacritic: Number,
-    
+    review: { type: Schema.Types.ObjectId, ref: "Review" },
   },
   {
     timeseries: true,
@@ -18,6 +18,6 @@ const gamesSchema = new Schema(
   }
 );
 
-const Country = model("Games", gamesSchema);
+const Games = model("Games", gamesSchema);
 
-module.exports = Country;
+module.exports = Games; 

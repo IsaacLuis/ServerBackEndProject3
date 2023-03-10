@@ -1,37 +1,101 @@
 var express = require("express");
 var router = express.Router();
 
-const User = require('../models/User.model')
-const Review = require('../models/Review.model')
-const isAuthenticated = require('../middleware/isAuthenticated')
+const User = require("../models/User.model");
+const Review = require("../models/Review.model");
+const Games = require("../models/Games.model");
+const isAuthenticated = require("../middleware/isAuthenticated");
 // games_pick
 
-router.post('/add-wish/:userId', (req, res, next) => {
+
+function objectId() {
+  const os = require("os");
+  const crypto = require("crypto");
+
+  const secondInHex = Math.floor(new Date() / 1000).toString(16);
+  const machineId = crypto
+    .createHash("md5")
+    .update(os.hostname())
+    .digest("hex")
+    .slice(0, 6);
+  const processId = process.pid.toString(16).slice(0, 4).padStart(4, "0");
+  const counter = process
+    .hrtime()[1]
+    .toString(16)
+    .slice(0, 6)
+    .padStart(6, "0");
+
+  return secondInHex + machineId + processId + counter;
+}
+console.log(objectId());
 
 
+router.post("/add-wish/:userId", (req, res, next) => {
+  console.log(req.body);
+  Games.findOne({ name: req.body.game.name }).then((foundGame) => {
+    if (!foundGame) {
+      Games.create({
+        name: req.body.game.name,
+        id: req.body.game.id,
+        background_image: req.body.game.background_image,
+        released: req.body.game.released,
+        review: objectId(), 
 
+        // genres: Array,
+        // platforms: [Object],
+        // languages: [String],
+        metacritic: req.body.game.metacritic,
+      }).then((gameCreated) => {
+        User.findByIdAndUpdate(
+          req.params.userId,
+          {
+            $addToSet: { games_pick: gameCreated._id },
+          },
+          { new: true }
+        )
+          .populate("games_pick")
+          .then((updatedUser) => {
+            res.json(updatedUser);
+          });
+      });
+    } else {
+      Games.findOne({ name: req.body.game.name }).then((foundGame) => {
+        User.findByIdAndUpdate(
+          req.params.userId,
+          {
+            $addToSet: { games_pick: foundGame._id },
+          },
+          { new: true }
+        )
+          .populate("games_pick")
+          .then((updatedUser) => {
+            res.json(updatedUser);
+          });
+      });
+    }
+  });
 
-  User.findByIdAndUpdate(req.params.userId, {
-    $addToSet: { games_pick: req.body.game }
-    
-  },
-    { new: true })
-    .then((updatedUser) => {
-      return updatedUser.populate('games_pick')
-    })
-    
-    // .then((populated) => {
-    //     return populated.populate('posts')
-    // })
-    .then((second) => {
-      res.json(second)
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+  // User.findByIdAndUpdate(
+  //   req.params.userId,
+  //   {
+  //     $addToSet: { games_pick: req.body.game },
+  //   },
+  //   { new: true }
+  // )
+  //   .then((updatedUser) => {
+  //     return updatedUser.populate("games_pick");
+  //   })
 
-
-})
+  //   // .then((populated) => {
+  //   //     return populated.populate('posts')
+  //   // })
+  //   .then((second) => {
+  //     res.json(second);
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
+});
 
 router.post("/delete/add-wish/:userId", (req, res, next) => {
   const gameId = req.body.gameId;
@@ -47,14 +111,15 @@ router.post("/delete/add-wish/:userId", (req, res, next) => {
           (game) => game.id !== gameId
         );
         foundUser.games_pick = updatedGames;
-        foundUser.save()
+        foundUser
+          .save()
           .then((savedUser) => {
             res.json(savedUser);
           })
           .catch((err) => {
             console.log(err);
             res.status(500).json({ message: "server" });
-          })
+          });
       } else {
         res.json({ message: "Game not found in wishlist" });
       }
@@ -65,26 +130,37 @@ router.post("/delete/add-wish/:userId", (req, res, next) => {
     });
 });
 
-router.post('/reviews', isAuthenticated, (req, res) => {
+router.post("/reviews/:id/:userId", isAuthenticated, (req, res) => {
   const { user, comment, rate } = req.body;
+  console.log(req.params.userId);
+  console.log(req.body);
+  Review.create({
+    comment: req.body.review,
+  }).then((createdReview) => {
+    console.log(createdReview);
+    Games.findById(req.params.id).then((foundGame) => {
+      // if (!foundGame.reviews.length)
+      Games.findByIdAndUpdate(
+        req.params.id,
 
-  // Create a new review instance using the Review model
-  const newReview = new Review({
-    user: req.user._id, 
-    comment: req.body.comment,
-    rate: req.body.rate
-  });
-  
-  newReview.save()
-    .then(() => res.status(201).send('Review created successfully'))
-    .catch(error => {
-      console.error('Error creating review:', error);
-      res.status(500).send('Internal server error');
+        { review: createdReview._id },
+
+        { new: true }
+      ).then((updatedGame) => {
+        console.log(updatedGame);
+      });
+
+      User.findById(req.params.userId)
+
+        .populate({ path: "games_pick", populate: { path: "review" } })
+        .then((updatedUser) => {
+          console.log(updatedUser);
+          res.json(updatedUser);
+        });
     });
+  });
 });
 
-
-
-
+// Create a new review instance using the Review model
 
 module.exports = router;
